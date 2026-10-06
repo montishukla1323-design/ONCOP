@@ -1,0 +1,10 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+.env
+oncop.db-shm
+oncop.db-wal
+.DS_Store
+*.log
+scratch/

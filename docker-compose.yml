@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  oncop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: oncop-portal:latest
+    container_name: oncop_server
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - HOST=0.0.0.0
+      - NODE_ENV=production
+      - DB_PATH=/app/data/oncop.db
+    volumes:
+      # Persistent SQLite database storage
+      - oncop_db_data:/app/data
+      # Persistent citizen proof photo uploads
+      - oncop_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  oncop_db_data:
+    driver: local
+  oncop_uploads:
+    driver: local

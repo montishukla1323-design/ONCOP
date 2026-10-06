@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ONCOP - One Nation One Complaint Portal | Unified Civic Redressal</title>
+  <meta name="description" content="Unified Citizen Grievance Redressal Platform with Smart Automated Routing, SLA Tracking, Interactive Heatmap, and Public Accountability.">
+  
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Leaflet CSS for Heatmap & Ward Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Top Announcement / Civic Banner -->
+  <aside class="gov-topbar">
+    <div class="container gov-topbar-inner">
+      <div class="gov-identity">
+        <span class="emblem-tag" data-i18n="govBanner">🇮🇳 राष्ट्रीय शिकायत निवारण पोर्टल | Govt. of India / Municipal Initiative</span>
+        <span class="tag-pill" data-i18n="slaActivePill">24x7 Active SLA Redressal</span>
+        <span class="tag-pill tag-db-status" id="dbStatusPill"><i class="fa-solid fa-server"></i> REST API & SQLite DB: Active</span>
+        <span class="tag-pill tag-gov-status" id="govGatewayPill"><i class="fa-solid fa-network-wired"></i> CPGRAMS & SBM Gateway: Linked</span>
+      </div>
+      <div class="topbar-actions">
+        <button id="btnSosModal" class="btn-sos-top" title="Emergency Civic Contacts">
+          <i class="fa-solid fa-phone-volume"></i> <span data-i18n="emergencySos">Civic SOS (112)</span>
+        </button>
+        <span class="toll-free"><i class="fa-solid fa-headset"></i> Helpline: 1800-11-ONCOP</span>
+        
+        <!-- Language Switcher -->
+        <button id="btnLangToggle" class="btn-lang-toggle" aria-label="Toggle Language">
+          <i class="fa-solid fa-language"></i> <span id="langLabel">हिन्दी</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="themeToggle" class="btn-theme-toggle" aria-label="Toggle Theme">
+          <i class="fa-solid fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Navigation Header -->
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand-logo" id="brandNav">
+        <div class="brand-icon">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title">ONCOP <span class="brand-sub">Redressal</span></div>
+          <p class="brand-tagline" data-i18n="brandTagline">One Nation • One Complaint • Zero Confusion</p>
+        </div>
+      </div>
+
+      <nav class="main-nav" id="mainNav">
+        <button class="nav-item active" data-tab="citizen" id="navCitizen">
+          <i class="fa-solid fa-bullhorn"></i> <span data-i18n="navReport">Report Complaint</span>
+        </button>
+        <button class="nav-item" data-tab="tracker" id="navTracker">
+          <i class="fa-solid fa-compass"></i> <span data-i18n="navTrack">Live Tracking</span>
+        </button>
+        <button class="nav-item" data-tab="admin" id="navAdmin">
+          <i class="fa-solid fa-gauge-high"></i> <span data-i18n="navAdmin">Admin & SLA Desk</span>
+          <span class="badge-alert" id="adminAlertBadge">2</span>
+        </button>
+        <button class="nav-item" data-tab="heatmap" id="navHeatmap">
+          <i class="fa-solid fa-map-location-dot"></i> <span data-i18n="navMap">Public Heatmap</span>
+        </button>
+      </nav>
+
+      <div class="header-cta">
+        <!-- Live Notifications Bell & Drawer -->
+        <div class="notification-wrapper">
+          <button class="btn-notif" id="btnNotificationTray" aria-label="Simulated SMS Notifications">
+            <i class="fa-solid fa-bell"></i>
+            <span class="notif-count" id="notifBadge">3</span>
+          </button>
+          
+          <div class="notification-dropdown glass-panel" id="notifDropdown">
+            <div class="notif-header">
+              <h4><i class="fa-solid fa-message"></i> Live Civic SMS & Dispatch Feed</h4>
+              <button class="btn-clear-notif" id="btnClearNotifs">Clear</button>
+            </div>
+            <div class="notif-list" id="notifList">
+              <!-- Dynamically injected -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Authentication & User Profile Badge -->
+        <div class="auth-header-container" id="authHeaderContainer">
+          <button class="btn-login-trigger" id="btnLoginTrigger">
+            <i class="fa-solid fa-user-shield"></i> <span data-i18n="btnLogin">Login / Sign In</span>
+          </button>
+          
+          <div class="user-profile-badge" id="userProfileBadge" style="display:none;">
+            <img class="user-avatar" id="headerUserAvatar" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" alt="avatar">
+            <div class="user-meta">
+              <span class="user-name" id="headerUserName">Ramesh Sharma</span>
+              <span class="user-role-tag" id="headerUserRole">Citizen</span>
+            </div>
+            <button class="btn-logout" id="btnLogout" title="Logout">
+              <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="btnQuickReport">
+          <i class="fa-solid fa-plus"></i> <span data-i18n="btnFileGrievance">File Grievance</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Civic KPI Ticker -->
+  <section class="kpi-ticker-section">
+    <div class="container">
+      <div class="kpi-ticker-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon icon-blue"><i class="fa-solid fa-clipboard-list"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-value" id="kpiTotal">0</span>
+            <span class="kpi-label" data-i18n="kpiTotal">Complaints Filed</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon icon-green"><i class="fa-solid fa-circle-check"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-value" id="kpiResolved">0</span>
+            <span class="kpi-label" data-i18n="kpiResolved">Resolved On-Ground</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon icon-amber"><i class="fa-solid fa-clock-rotate-left"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-value" id="kpiAvgTime">0 hrs</span>
+            <span class="kpi-label" data-i18n="kpiAvgTime">Avg. Resolution Time</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon icon-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="kpi-info">
+            <span class="kpi-value" id="kpiEscalated">0</span>
+            <span class="kpi-label" data-i18n="kpiEscalated">Active SLA Escalations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    
+    <!-- TAB 1: CITIZEN REPORTING PORTAL -->
+    <section class="tab-pane active" id="tabCitizen">
+      <div class="container">
+        
+        <div class="section-hero">
+          <div class="hero-badge"><i class="fa-solid fa-robot"></i> <span data-i18n="aiRoutingActive">Smart AI & Ward Auto-Routing Active</span></div>
+          <h1 data-i18n="heroTitle">Submit Your Civic Complaint</h1>
+          <p data-i18n="heroSubtitle">Chahe Sadak ka gaddha ho ya Kachre ka dher—apni complaint text ya photo ke sath daalein. System automatically right department aur officer ko route karega.</p>
+        </div>
+
+        <div class="complaint-grid">
+          <!-- Form Card -->
+          <div class="form-card glass-panel">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-pen-to-square"></i> <span data-i18n="formTitle">New Grievance Registration</span></h2>
+              <span class="step-indicator">Direct Dispatch Mode</span>
+            </div>
+
+            <form id="grievanceForm" class="grievance-form">
+              
+              <!-- Citizen Contact -->
+              <div class="form-row two-col">
+                <div class="form-group">
+                  <label for="citizenName"><i class="fa-solid fa-user"></i> <span data-i18n="lblFullName">Full Name *</span></label>
+                  <input type="text" id="citizenName" placeholder="e.g. Enter your full name" required value="">
+                </div>
+                <div class="form-group">
+                  <label for="citizenPhone"><i class="fa-solid fa-mobile-screen"></i> <span data-i18n="lblMobile">Mobile Number (SMS Updates) *</span></label>
+                  <input type="tel" id="citizenPhone" placeholder="10-digit mobile number" required value="">
+                </div>
+              </div>
+
+              <!-- Problem Title -->
+              <div class="form-group">
+                <label for="complaintTitle"><i class="fa-solid fa-heading"></i> <span data-i18n="lblTitle">Issue Title *</span></label>
+                <input type="text" id="complaintTitle" placeholder="e.g. Huge Pothole causing traffic jams near metro pillar 45" required>
+              </div>
+
+              <!-- Category & Priority Row -->
+              <div class="form-row two-col">
+                <div class="form-group">
+                  <label for="complaintCategory"><i class="fa-solid fa-layer-group"></i> <span data-i18n="lblCategory">Problem Category *</span></label>
+                  <select id="complaintCategory" required>
+                    <option value="" disabled selected>Select Category (Or let AI detect)</option>
+                    <option value="roads">🛣️ Roads, Potholes & Footpaths</option>
+                    <option value="sanitation">🗑️ Waste Management & Garbage Dumps</option>
+                    <option value="water">💧 Water Contamination & Pipeline Leak</option>
+                    <option value="electricity">⚡ Streetlights & Hazardous Live Wires</option>
+                    <option value="sewer">🚰 Sewage Overflow & Blocked Drains</option>
+                    <option value="parks">🌳 Horticulture & Fallen Trees</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="urgencyLevel"><i class="fa-solid fa-bell"></i> <span data-i18n="lblUrgency">Severity / Urgency</span></label>
+                  <select id="urgencyLevel">
+                    <option value="Normal">🟢 Standard (3-5 Days SLA)</option>
+                    <option value="High">🟠 High Priority (24-48h SLA)</option>
+                    <option value="Critical">🔴 Emergency / Hazard (12-24h SLA)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Location & Ward -->
+              <div class="form-row two-col">
+                <div class="form-group">
+                  <label for="complaintWard"><i class="fa-solid fa-location-dot"></i> <span data-i18n="lblWard">Ward / Colony Zone *</span></label>
+                  <select id="complaintWard" required>
+                    <option value="Ward 14 - Central Market">Ward 14 - Central Market / Connaught Zone</option>
+                    <option value="Ward 08 - South Extension">Ward 08 - South Extension Colony</option>
+                    <option value="Ward 22 - Industrial Area Phase 2">Ward 22 - Industrial Area Phase 2</option>
+                    <option value="Ward 05 - Green Park & Metro">Ward 05 - Green Park & Metro Corridor</option>
+                    <option value="Ward 31 - East Enclave Housing">Ward 31 - East Enclave Housing</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="complaintLandmark"><i class="fa-solid fa-map-pin"></i> <span data-i18n="lblLandmark">Specific Landmark / Address *</span></label>
+                  <input type="text" id="complaintLandmark" placeholder="Opposite City Hospital Gate 2" required>
+                </div>
+              </div>
+
+              <!-- Interactive High-Precision Location & GPS Mini-Map -->
+              <div class="form-group">
+                <div class="geo-picker-header">
+                  <label><i class="fa-solid fa-satellite"></i> <span data-i18n="lblPinLocation">Precision GPS & Ground Geolocation *</span></label>
+                  <div class="geo-actions">
+                    <button type="button" class="btn-geo-detect" id="btnAutoDetectGps" title="Acquire satellite coordinates using device GPS hardware">
+                      <i class="fa-solid fa-location-crosshairs"></i> <span data-i18n="btnDetectGps">Auto-Detect My GPS</span>
+                    </button>
+                    <button type="button" class="btn-geo-recalibrate" id="btnRecalibrateGps" title="Recalibrate GPS fix" style="display:none;">
+                      <i class="fa-solid fa-arrows-rotate"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Integrated Place / Street Search Bar -->
+                <div class="geo-search-container">
+                  <div class="geo-search-box">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" id="geoSearchInput" placeholder="Search colony, street, metro, landmark (e.g. Connaught Place)..." autocomplete="off">
+                    <button type="button" id="btnGeoSearchClear" class="btn-geo-clear" style="display:none;"><i class="fa-solid fa-xmark"></i></button>
+                    <button type="button" id="btnGeoSearchSubmit" class="btn-geo-search-go">Find</button>
+                  </div>
+                  <div id="geoSearchResults" class="geo-search-dropdown" style="display:none;"></div>
+                </div>
+
+                <div class="picker-map-container" id="pickerMapContainer">
+                  <div id="citizenPickerMap" class="picker-map"></div>
+                  
+                  <div class="coords-display" id="coordsDisplay">
+                    <div class="coords-latlng">
+                      <i class="fa-solid fa-crosshairs"></i> <span id="pickedCoordsText">28.632845° N, 77.219712° E</span>
+                    </div>
+                    <div class="coords-accuracy" id="coordsAccuracyBadge">
+                      <i class="fa-solid fa-circle-dot"></i> <span id="accuracyText">Drag pin or click map to pinpoint</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Detected Reverse-Geocoded Address Banner -->
+                <div id="geoDetectedAddressCard" class="geo-detected-card" style="display: none;">
+                  <div class="geo-detected-content">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <div class="geo-detected-text">
+                      <span class="geo-detected-label">Detected Physical Address:</span>
+                      <strong id="geoDetectedAddressText">Loading address...</strong>
+                    </div>
+                  </div>
+                  <button type="button" id="btnApplyAddressToLandmark" class="btn-apply-addr" title="Copy detected address to Landmark field">
+                    <i class="fa-solid fa-check"></i> Use in Form
+                  </button>
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group">
+                <label for="complaintDescription"><i class="fa-solid fa-align-left"></i> <span data-i18n="lblDesc">Detailed Description *</span></label>
+                <textarea id="complaintDescription" rows="3" placeholder="Explain the problem in detail (Hindi or English). AI will auto-detect right department..." required></textarea>
+                <div class="input-helper"><i class="fa-solid fa-wand-magic-sparkles"></i> Tip: Try typing keywords like 'pothole', 'kachra', 'bijli taar', 'pipe leak' to see live smart routing!</div>
+              </div>
+
+              <!-- Photo Proof Upload -->
+              <div class="form-group">
+                <label><i class="fa-solid fa-camera"></i> <span data-i18n="lblPhoto">Upload Photo Proof (Optional but accelerates resolution)</span></label>
+                <div class="photo-upload-container">
+                  <div class="upload-dropzone" id="uploadDropzone">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <p data-i18n="dropzoneText">Click to select photo or drag and drop from device / camera</p>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Supports JPG, PNG, WEBP (Max 10MB)</span>
+                    <input type="file" id="photoFileInput" accept="image/*" style="display:none">
+                  </div>
+                </div>
+                <div id="photoPreviewContainer" class="photo-preview-box" style="display:none;">
+                  <img id="photoPreviewImg" src="" alt="Complaint photo preview">
+                  <button type="button" id="btnRemovePhoto" class="btn-remove-photo"><i class="fa-solid fa-xmark"></i> Remove</button>
+                </div>
+              </div>
+
+              <button type="submit" class="btn-submit-complaint" id="btnSubmitComplaint">
+                <i class="fa-solid fa-paper-plane"></i> <span data-i18n="btnSubmit">Submit Grievance & Route Instantly</span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Live Smart Routing Preview Card -->
+          <div class="smart-routing-card">
+            <div class="routing-preview-header">
+              <div class="pulse-indicator"></div>
+              <h3>⚡ Smart AI Routing Engine</h3>
+            </div>
+            <p class="routing-desc" data-i18n="routingDesc">Real-time prediction of assigned municipal department, nodal officer, and strict SLA deadline based on your inputs.</p>
+
+            <div class="routing-details-box glass-panel">
+              <div class="route-item">
+                <span class="route-label"><i class="fa-solid fa-building-flag"></i> Target Department:</span>
+                <span class="route-val" id="previewDept">Public Works Dept (Roads & Bridges)</span>
+              </div>
+              <div class="route-item">
+                <span class="route-label"><i class="fa-solid fa-user-shield"></i> Assigned Zonal Officer:</span>
+                <span class="route-val" id="previewOfficer">Er. V. K. Saxena (Divisional Engineer)</span>
+              </div>
+              <div class="route-item">
+                <span class="route-label"><i class="fa-solid fa-hourglass-start"></i> Mandatory SLA Resolution Deadline:</span>
+                <span class="route-val badge-sla" id="previewSla">48 Hours Guaranteed</span>
+              </div>
+              <div class="route-item">
+                <span class="route-label"><i class="fa-solid fa-shield-virus"></i> Auto-Escalation Authority:</span>
+                <span class="route-val" id="previewEscalation">Level 1: Dept HOD ➔ Level 2: Municipal Commissioner</span>
+              </div>
+            </div>
+
+            <!-- Citizen Assurance Banner -->
+            <div class="assurance-card">
+              <h4><i class="fa-solid fa-circle-check"></i> Accountability Guarantee</h4>
+              <ul>
+                <li><strong>No Runaround:</strong> Ek hi portal se sabhi 8 vibhagon ko automated dispatch.</li>
+                <li><strong>Strict SLA Tracking:</strong> Samay par solve nahi hua toh senior IAS/HOD desk par auto-escalate.</li>
+                <li><strong>Transparent Proof:</strong> Resolved hone par officer ko ground "After" photo upload karni padegi.</li>
+              </ul>
+            </div>
+
+            <!-- Citizen's Recent Logged Complaints -->
+            <div class="quick-sample-track glass-panel">
+              <h4><i class="fa-solid fa-clock-rotate-left"></i> Recently Filed Grievances:</h4>
+              <p>Click any complaint to view live 4-stage tracking timeline:</p>
+              <div class="demo-chip-list" id="citizenDemoChips">
+                <div style="font-size: 0.82rem; color: var(--text-muted); padding: 0.5rem 0;">
+                  <i class="fa-solid fa-info-circle"></i> No complaints registered yet. File a complaint using the form to track it live here.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 2: LIVE COMPLAINT TRACKER -->
+    <section class="tab-pane" id="tabTracker">
+      <div class="container">
+        
+        <div class="tracker-search-bar glass-panel">
+          <div class="search-title-row">
+            <div>
+              <h2><i class="fa-solid fa-crosshairs"></i> <span data-i18n="trackerTitle">Live Grievance Tracking Engine</span></h2>
+              <p data-i18n="trackerSubtitle">Check transparent status, assigned officer contact, ground progress timeline, and download official receipt.</p>
+            </div>
+            <div class="search-input-group">
+              <input type="text" id="trackInput" placeholder="Enter Complaint ID (e.g. ONCOP-2026-XXXX)">
+              <button class="btn-primary" id="btnTrackComplaint"><i class="fa-solid fa-search"></i> <span data-i18n="btnTrack">Track Status</span></button>
+            </div>
+          </div>
+        </div>
+
+        <div id="trackerResultArea" class="tracker-result-area">
+          <!-- Populated by JavaScript -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 3: ADMIN & FIELD OFFICER SLA DESK -->
+    <section class="tab-pane" id="tabAdmin">
+      <div class="container">
+        
+        <div class="admin-top-header">
+          <div>
+            <div class="admin-role-badge"><i class="fa-solid fa-user-lock"></i> Municipal Redressal Command Center</div>
+            <h2>Department Grievance & SLA Escalation Dashboard</h2>
+            <p>Real-time SLA countdowns, officer assignment, analytics, and Level-1 & Level-2 automated escalations.</p>
+          </div>
+          
+          <div class="admin-top-actions">
+            <button class="btn-export-csv" id="btnExportCsv" title="Export all complaints to CSV format">
+              <i class="fa-solid fa-file-csv"></i> Export Data (.CSV)
+            </button>
+          </div>
+        </div>
+
+        <!-- Department SLA Performance Cards -->
+        <div class="dept-performance-row">
+          <div class="dept-stat-card glass-panel">
+            <div class="dept-stat-head">
+              <span class="dept-stat-title"><i class="fa-solid fa-road"></i> Public Works Dept</span>
+              <span class="dept-stat-rate">88% SLA</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill fill-blue" style="width: 88%;"></div></div>
+            <div class="dept-stat-foot"><span>4 Active</span> • <span>Avg 26h</span></div>
+          </div>
+
+          <div class="dept-stat-card glass-panel">
+            <div class="dept-stat-head">
+              <span class="dept-stat-title"><i class="fa-solid fa-trash-can"></i> Solid Waste Division</span>
+              <span class="dept-stat-rate">94% SLA</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill fill-green" style="width: 94%;"></div></div>
+            <div class="dept-stat-foot"><span>2 Active</span> • <span>Avg 18h</span></div>
+          </div>
+
+          <div class="dept-stat-card glass-panel">
+            <div class="dept-stat-head">
+              <span class="dept-stat-title"><i class="fa-solid fa-bolt"></i> Power & Streetlights</span>
+              <span class="dept-stat-rate">98% SLA</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill fill-amber" style="width: 98%;"></div></div>
+            <div class="dept-stat-foot"><span>1 Active</span> • <span>Avg 11h</span></div>
+          </div>
+
+          <div class="dept-stat-card glass-panel">
+            <div class="dept-stat-head">
+              <span class="dept-stat-title"><i class="fa-solid fa-faucet-drip"></i> Jal Board & Water</span>
+              <span class="dept-stat-rate">79% SLA</span>
+            </div>
+            <div class="progress-bar-bg"><div class="progress-fill fill-red" style="width: 79%;"></div></div>
+            <div class="dept-stat-foot"><span>3 Active</span> • <span>Avg 34h</span></div>
+          </div>
+        </div>
+
+        <div class="admin-filter-bar">
+          <div class="filter-pill-group">
+            <button class="filter-btn active" data-filter="all">All (<span id="countAll">0</span>)</button>
+            <button class="filter-btn" data-filter="Pending">Pending (<span id="countPending">0</span>)</button>
+            <button class="filter-btn" data-filter="Assigned">Assigned (<span id="countAssigned">0</span>)</button>
+            <button class="filter-btn" data-filter="In Progress">In Progress (<span id="countInProgress">0</span>)</button>
+            <button class="filter-btn" data-filter="Resolved">Resolved (<span id="countResolved">0</span>)</button>
+            <button class="filter-btn btn-escalated" data-filter="Escalated">⚠️ Overdue / Escalated (<span id="countEscalated">0</span>)</button>
+          </div>
+        </div>
+
+        <!-- Complaints Table / Card Grid -->
+        <div class="admin-complaints-list" id="adminComplaintsList">
+          <!-- Dynamically injected -->
+        </div>
+
+      </div>
+    </section>
+
+    <!-- TAB 4: PUBLIC HEATMAP & TRANSPARENCY -->
+    <section class="tab-pane" id="tabHeatmap">
+      <div class="container">
+        <div class="heatmap-header">
+          <div>
+            <h2><i class="fa-solid fa-earth-asia"></i> Public Transparency & Ward Heatmap</h2>
+            <p>Live geographical view of civic grievances. High concentration zones alert municipal commissioners to deploy extra manpower.</p>
+          </div>
+          <div class="heatmap-controls">
+            <select id="mapFilterCategory" class="map-select">
+              <option value="all">All Civic Categories</option>
+              <option value="roads">Roads & Potholes</option>
+              <option value="sanitation">Sanitation & Garbage</option>
+              <option value="water">Water Supply</option>
+              <option value="electricity">Streetlights & Power</option>
+              <option value="sewer">Sewage Overflow</option>
+            </select>
+            <select id="mapFilterStatus" class="map-select">
+              <option value="all">All Statuses</option>
+              <option value="active">Active (Pending / In Progress)</option>
+              <option value="Resolved">Resolved</option>
+              <option value="escalated">SLA Breached</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Interactive Map Container -->
+        <div class="map-wrapper glass-panel">
+          <div id="civicMap" class="civic-map"></div>
+          
+          <!-- Map Legend Overlay -->
+          <div class="map-legend">
+            <h4><i class="fa-solid fa-layer-group"></i> Issue Status Legend</h4>
+            <div class="legend-item"><span class="legend-color color-red"></span> Critical / SLA Escalated</div>
+            <div class="legend-item"><span class="legend-color color-amber"></span> In Progress / Assigned</div>
+            <div class="legend-item"><span class="legend-color color-blue"></span> Newly Logged (Pending)</div>
+            <div class="legend-item"><span class="legend-color color-green"></span> 100% Resolved On-Ground</div>
+          </div>
+        </div>
+
+        <!-- Ward Performance Leaderboard -->
+        <div class="transparency-stats-grid">
+          <div class="stat-box glass-panel">
+            <h3>🏆 Best Performing Municipal Ward</h3>
+            <div class="leaderboard-item">
+              <span class="rank">#1</span>
+              <div>
+                <strong>Ward 05 - Green Park</strong>
+                <p>96.4% on-time SLA resolution</p>
+              </div>
+              <span class="badge-tag tag-success">A+ Grade</span>
+            </div>
+            <div class="leaderboard-item">
+              <span class="rank">#2</span>
+              <div>
+                <strong>Ward 14 - Central Market</strong>
+                <p>91.8% on-time resolution</p>
+              </div>
+              <span class="badge-tag tag-success">A Grade</span>
+            </div>
+          </div>
+
+          <div class="stat-box glass-panel">
+            <h3>⚠️ Wards Requiring High Attention</h3>
+            <div class="leaderboard-item">
+              <span class="rank-warning">!</span>
+              <div>
+                <strong>Ward 22 - Industrial Zone</strong>
+                <p>Heavy water leakage & road damage backlog</p>
+              </div>
+              <span class="badge-tag tag-danger">C- Grade</span>
+            </div>
+            <div class="leaderboard-item">
+              <span class="rank-warning">!</span>
+              <div>
+                <strong>Ward 31 - East Enclave</strong>
+                <p>Garbage collection vehicle shortage</p>
+              </div>
+              <span class="badge-tag tag-danger">Needs Review</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Civic Citizen Charter & GovTech Footer -->
+  <footer class="app-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="brand-logo footer-logo">
+            <div class="brand-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="brand-title">ONCOP <span class="brand-sub">Redressal</span></div>
+          </div>
+          <p class="footer-desc">
+            One Nation One Complaint Portal (ONCOP) is an integrated national civic governance portal enabling frictionless grievance redressal, strict time-bound SLAs, and public transparency.
+          </p>
+          <div class="footer-socials">
+            <span class="social-icon"><i class="fa-brands fa-x-twitter"></i></span>
+            <span class="social-icon"><i class="fa-brands fa-facebook-f"></i></span>
+            <span class="social-icon"><i class="fa-brands fa-youtube"></i></span>
+            <span class="social-icon"><i class="fa-brands fa-linkedin-in"></i></span>
+          </div>
+        </div>
+
+        <div class="footer-links-col">
+          <h4>Municipal Departments</h4>
+          <ul>
+            <li><a href="#tabCitizen" onclick="app.switchTab('citizen')">Public Works (PWD)</a></li>
+            <li><a href="#tabCitizen" onclick="app.switchTab('citizen')">Solid Waste Management</a></li>
+            <li><a href="#tabCitizen" onclick="app.switchTab('citizen')">Delhi Jal Board (Water)</a></li>
+            <li><a href="#tabCitizen" onclick="app.switchTab('citizen')">Streetlighting & Energy</a></li>
+            <li><a href="#tabCitizen" onclick="app.switchTab('citizen')">Drainage & Sewerage</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <h4>SLA Citizen Charter</h4>
+          <ul>
+            <li><span>Hazardous Live Wire: <strong>12 Hours</strong></span></li>
+            <li><span>Garbage Removal: <strong>24 Hours</strong></span></li>
+            <li><span>Water Contamination: <strong>24 Hours</strong></span></li>
+            <li><span>Pothole Repair: <strong>48 Hours</strong></span></li>
+            <li><span>Sewage Overflow: <strong>48 Hours</strong></span></li>
+          </ul>
+        </div>
+
+        <div class="footer-links-col">
+          <h4>National Portals</h4>
+          <ul>
+            <li><a href="https://india.gov.in" target="_blank" rel="noopener">National Portal of India</a></li>
+            <li><a href="https://pgportal.gov.in" target="_blank" rel="noopener">CPGRAMS Redressal</a></li>
+            <li><a href="https://swachhbharatmission.gov.in" target="_blank" rel="noopener">Swachh Bharat Urban</a></li>
+            <li><a href="https://digitalindia.gov.in" target="_blank" rel="noopener">Digital India Initiative</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom-bar">
+        <div>
+          © 2026 ONCOP Civic Redressal Portal. Designed & Powered for Citizen Welfare.
+        </div>
+        <div class="footer-legal">
+          <span>Privacy Policy</span> • <span>Terms of Service</span> • <span>Hyperlink Policy</span> • <span>Citizen Redressal Charter</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal for Officer Action (Update Status / Upload Proof) -->
+  <div class="modal-backdrop" id="officerModal">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h3 id="modalTitle"><i class="fa-solid fa-wrench"></i> Update Complaint Resolution</h3>
+        <button class="btn-close-modal" id="btnCloseModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="complaint-summary-chip" id="modalComplaintSummary">
+          <!-- Summary info -->
+        </div>
+
+        <form id="officerActionForm">
+          <input type="hidden" id="modalComplaintId">
+
+          <div class="form-group">
+            <label for="newStatusSelect"><i class="fa-solid fa-arrows-spin"></i> Transition Status To:</label>
+            <select id="newStatusSelect" required>
+              <option value="Assigned">Assigned (Officer taking charge)</option>
+              <option value="In Progress">In Progress (Work crew deployed)</option>
+              <option value="Resolved">Resolved (Work completed on-ground)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="officerRemarks"><i class="fa-solid fa-comment-dots"></i> Field Officer Official Notes / Remarks:</label>
+            <textarea id="officerRemarks" rows="3" placeholder="e.g. Deployed 3 road rollers and cold asphalt mix. Patchwork completed." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label><i class="fa-solid fa-camera-retro"></i> Upload Work Completion "After" Proof Photo:</label>
+            <div class="photo-completion-preview">
+              <input type="text" id="modalProofImgUrl" placeholder="Enter image URL or link to cloud photo (optional)">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="btnCancelModal">Cancel</button>
+            <button type="submit" class="btn-primary"><i class="fa-solid fa-check"></i> Commit Status Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Emergency Civic SOS Contacts -->
+  <div class="modal-backdrop" id="sosModal">
+    <div class="modal-card glass-panel">
+      <div class="modal-header">
+        <h3 style="color: var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Emergency Civic Helplines</h3>
+        <button class="btn-close-modal" id="btnCloseSosModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+          In case of immediate threat to human life or major disaster, call the toll-free quick-response helplines below:
+        </p>
+
+        <div class="sos-list-grid">
+          <div class="sos-item">
+            <div class="sos-icon"><i class="fa-solid fa-shield"></i></div>
+            <div class="sos-info">
+              <strong>112 - All-in-One National Emergency</strong>
+              <span>Police, Fire & Medical Integrated Dispatch</span>
+            </div>
+            <a href="tel:112" class="btn-call-sos">Call 112</a>
+          </div>
+
+          <div class="sos-item">
+            <div class="sos-icon"><i class="fa-solid fa-fire-extinguisher"></i></div>
+            <div class="sos-info">
+              <strong>101 - Fire & Rescue Services</strong>
+              <span>Structural collapse, gas leak, building fire</span>
+            </div>
+            <a href="tel:101" class="btn-call-sos">Call 101</a>
+          </div>
+
+          <div class="sos-item">
+            <div class="sos-icon"><i class="fa-solid fa-bolt-lightning"></i></div>
+            <div class="sos-info">
+              <strong>1912 - Electricity & Grid Emergency</strong>
+              <span>Snapped high-tension lines, transformer fire</span>
+            </div>
+            <a href="tel:1912" class="btn-call-sos">Call 1912</a>
+          </div>
+
+          <div class="sos-item">
+            <div class="sos-icon"><i class="fa-solid fa-droplet"></i></div>
+            <div class="sos-info">
+              <strong>1916 - Water Contamination & Major Burst</strong>
+              <span>Main trunk burst flooding residential colonies</span>
+            </div>
+            <a href="tel:1916" class="btn-call-sos">Call 1916</a>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="margin-top: 1.5rem;">
+          <button type="button" class="btn-secondary" id="btnDismissSos">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login & Authentication Modal Dialog -->
+  <div class="modal-backdrop" id="loginModal">
+    <div class="modal-card glass-panel auth-modal-card">
+      <div class="modal-header">
+        <div>
+          <h3><i class="fa-solid fa-id-card"></i> ONCOP Portal Authentication</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.2rem;">Single Sign-On for Citizens, Department Field Officers, and Municipal Admins</p>
+        </div>
+        <button class="btn-close-modal" id="btnCloseLoginModal"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Auth Role Switcher Tabs -->
+        <div class="auth-role-tabs">
+          <button class="auth-tab-btn active" id="tabLoginCitizen" data-target="formCitizenAuth">
+            <i class="fa-solid fa-user"></i> Citizen Login
+          </button>
+          <button class="auth-tab-btn" id="tabLoginOfficer" data-target="formOfficerAuth">
+            <i class="fa-solid fa-shield-halved"></i> Officer / Admin Login
+          </button>
+        </div>
+
+        <!-- Citizen Login Form -->
+        <form id="formCitizenAuth" class="auth-form active">
+          <div class="form-group">
+            <label for="citizenLoginPhone"><i class="fa-solid fa-mobile-screen"></i> Mobile Number (Registered)</label>
+            <input type="tel" id="citizenLoginPhone" placeholder="Enter 10-digit mobile number" required>
+          </div>
+          <div class="form-group">
+            <label for="citizenLoginPassword"><i class="fa-solid fa-key"></i> Password / OTP</label>
+            <input type="password" id="citizenLoginPassword" placeholder="Enter password (e.g. citizen123)" required>
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 0.5rem;">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Login as Citizen
+          </button>
+        </form>
+
+        <!-- Officer / Admin Login Form -->
+        <form id="formOfficerAuth" class="auth-form" style="display: none;">
+          <div class="form-group">
+            <label for="officerLoginEmail"><i class="fa-solid fa-envelope"></i> Official Government Email / ID</label>
+            <input type="email" id="officerLoginEmail" placeholder="e.g. pwd@oncop.gov.in" required>
+          </div>
+          <div class="form-group">
+            <label for="officerLoginPassword"><i class="fa-solid fa-lock"></i> Official Access Key</label>
+            <input type="password" id="officerLoginPassword" placeholder="Enter password (e.g. pwd123)" required>
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 0.5rem;">
+            <i class="fa-solid fa-shield"></i> Authenticate Officer Session
+          </button>
+        </form>
+
+        <!-- 1-Click Quick Demo Login Switcher -->
+        <div class="quick-demo-accounts">
+          <div class="demo-accounts-label">
+            <i class="fa-solid fa-bolt"></i> 1-Click Quick Test Accounts:
+          </div>
+          <div class="demo-user-grid">
+            <button type="button" class="btn-demo-user" data-uid="CIT-001">
+              <span class="user-pill-role role-citizen">Citizen</span>
+              <strong>Ramesh Sharma</strong>
+            </button>
+            <button type="button" class="btn-demo-user" data-uid="OFF-PWD-01">
+              <span class="user-pill-role role-officer">PWD Officer</span>
+              <strong>Er. V. K. Saxena</strong>
+            </button>
+            <button type="button" class="btn-demo-user" data-uid="OFF-SWM-02">
+              <span class="user-pill-role role-officer">Sanitation</span>
+              <strong>Dr. Sandeep Rawat</strong>
+            </button>
+            <button type="button" class="btn-demo-user" data-uid="ADM-001">
+              <span class="user-pill-role role-admin">Commissioner</span>
+              <strong>Rajeshwar Singh, IAS</strong>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toastNotification" class="toast-notification"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  
+  <!-- Main Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

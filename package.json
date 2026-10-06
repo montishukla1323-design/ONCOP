@@ -1,0 +1,21 @@
+{
+  "name": "oncop",
+  "version": "1.0.0",
+  "description": "ONCOP ek complete, citizen-centric civic grievance redressal portal hai jo aam nagrikon ki daily municipal aur civic samasyaon ko single window platform par collect karke AI & Location-based algorithms ke jariye sahi department aur field officer tak transparent tracking ke sath dispatch karta hai.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
+    "multer": "^2.4.0"
+  }
+}
