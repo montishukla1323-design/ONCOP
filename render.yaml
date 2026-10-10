@@ -6,6 +6,8 @@ services:
     buildCommand: npm install
     startCommand: node server.js
     envVars:
+      - key: NODE_VERSION
+        value: 22.8.0
       - key: NODE_ENV
         value: production
       - key: PORT
