@@ -2,6 +2,8 @@
 ### Production Full-Stack Civic Grievance Redressal & Smart Routing Platform
 **Powered by Node.js, Express, SQLite (`node:sqlite`), Leaflet Maps & Official National Govt Gateways**
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/montishukla1323-design/ONCOP)
+
 ---
 
 ## 🏗️ Architecture & Technology Stack
